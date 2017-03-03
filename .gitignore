@@ -1,0 +1,14 @@
+
+mod_xsendfile.slo
+
+mod_xsendfile.o
+
+mod_xsendfile.lo
+
+mod_xsendfile.la
+
+.libs/mod_xsendfile.so
+
+.libs/mod_xsendfile.lai
+
+.libs/mod_xsendfile.a
