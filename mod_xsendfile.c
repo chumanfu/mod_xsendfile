@@ -58,6 +58,7 @@
 
 #define AP_XSENDFILE_HEADER "X-SENDFILE"
 #define AP_XSENDFILETEMPORARY_HEADER "X-SENDFILE-TEMPORARY"
+#define AP_TPX_ALLOWCONTENTENCODING_HEADER "TPX-ALLOWCONTENTENCODING"
 
 module AP_MODULE_DECLARE_DATA xsendfile_module;
 
@@ -310,6 +311,7 @@ static apr_status_t ap_xsendfile_output_filter(ap_filter_t *f, apr_bucket_brigad
 
   char *file = NULL;
   char *translated = NULL;
+  char *allowcontentencoding = NULL;
 
   int errcode;
   int shouldDeleteFile = 0;
@@ -395,8 +397,34 @@ static apr_status_t ap_xsendfile_output_filter(ap_filter_t *f, apr_bucket_brigad
   /* as we dropped all the content this field is not valid anymore! */
   apr_table_unset(r->headers_out, "Content-Length");
   apr_table_unset(r->err_headers_out, "Content-Length");
-  apr_table_unset(r->headers_out, "Content-Encoding");
-  apr_table_unset(r->err_headers_out, "Content-Encoding");
+
+  allowcontentencoding = (char*)apr_table_get(r->headers_out, AP_TPX_ALLOWCONTENTENCODING_HEADER);
+
+  /*
+    Maybe tpx-allowcontentencoding is set via cgi in error_headers_out?
+  */
+  if (!allowcontentencoding || !*allowcontentencoding) {
+    allowcontentencoding = (char*)apr_table_get(r->err_headers_out, AP_TPX_ALLOWCONTENTENCODING_HEADER);
+  }
+
+  /*
+    if the allow content encoding flag isn't set unset the content encoding
+    else allow the content encoding header to stay intact
+  */
+  if (!allowcontentencoding || !*allowcontentencoding) {
+
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server, "xsendfile: remove the Content-Encoding header");
+
+    apr_table_unset(r->headers_out, "Content-Encoding");
+    apr_table_unset(r->err_headers_out, "Content-Encoding");
+  }
+  else {
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server, "xsendfile: leave the Content-Encoding header");
+  }
+
+  apr_table_unset(r->headers_out, AP_TPX_ALLOWCONTENTENCODING_HEADER);
+  apr_table_unset(r->err_headers_out, AP_TPX_ALLOWCONTENTENCODING_HEADER);
+  
 
   /* Decode header
      lighttpd does the same for X-Sendfile2, so we're compatible here
