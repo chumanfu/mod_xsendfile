@@ -429,7 +429,7 @@ static apr_status_t ap_xsendfile_output_filter(ap_filter_t *f, apr_bucket_brigad
   /* Decode header
      lighttpd does the same for X-Sendfile2, so we're compatible here
      */
-  if (conf->unescape != XSENDFILE_DISABLED) {
+  if (conf->unescape == XSENDFILE_ENABLED) {
     rv = ap_unescape_url(file);
     if (rv != OK) {
       /* Unescaping failed, probably due to bad encoding.
@@ -702,7 +702,7 @@ static const command_rec xsendfile_command_table[] = {
     xsendfile_cmd_flag,
     NULL,
     OR_FILEINFO,
-    "On|Off - Unescape/url-decode the value of the header (default: On)"
+    "On|Off - Unescape/url-decode the value of the header (default: Off)"
     ),
   AP_INIT_TAKE12(
     "XSendFilePath",
